@@ -52,18 +52,30 @@ def createGroupByEntityID(entityID):
     except Exception as e: print("Skipping: {e} ".format(e=e))
 
     #create group policy first
-    createGroupPolicyByIdentity(entity_alias, group_policy)
-    
-    #Finally, creates the group
-    print('creating group {group_name} for entity {entityID} and policies {group_policy}'.format(group_name=group_name,entityID=entityID,group_policy=group_policy))
-    try:
-        client.secrets.identity.create_or_update_group_by_name(
-            name=group_name,
-            member_entity_ids=entityID,
-            policies=group_policy,
-        )
-    except Exception as e: print("Skipping: {e} ".format(e=e))
 
+    if checkGroupExists(group_name):
+        print ("Group Exists -- Skipping")
+    else:    
+        createGroupPolicyByIdentity(entity_alias, group_policy)
+        #Finally, creates the group
+        print('creating group {group_name} for entity {entityID} and policies {group_policy}'.format(group_name=group_name,entityID=entityID,group_policy=group_policy))
+        try:
+            client.secrets.identity.create_or_update_group_by_name(
+                name=group_name,
+                member_entity_ids=entityID,
+                policies=group_policy,
+            )
+        except Exception as e: print("Skipping: {e} ".format(e=e))
+
+def checkGroupExists(group_name):
+    try:
+        list_response = client.secrets.identity.list_groups_by_name()
+        group_keys = list_response['data']['keys']
+    
+        if group_name in group_keys:
+            return True
+    except Exception as e: print("Skipping: {e} ".format(e=e))
+    return False
     
 #Creates a KV for the user group
 def createGroupSharedkv(entityID):
